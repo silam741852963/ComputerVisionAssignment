@@ -1,0 +1,4 @@
+Hãy viết các đoạn chương trình demo các phép biến đổi khác nhau đã học.
+So sánh đánh giá affine và projective transformation (ví dụ trực quan).
+(*) Thử nghiệm dán 1 hình chữ nhật/vuông lên một mặt phẳng chỉ định trước. Hãy chọn 1 hình ảnh cá nhân của bạn hoặc một nhân vật nổi tiếng để dán lên khung chữ nhật ở 2 file đính kèm hoặc các file khác.
+Gợi ý: dùng projective transformation, manually tới automatic. 
