@@ -1,51 +1,40 @@
 from PIL import Image
 import numpy as np
-from scipy.ndimage import map_coordinates
 
-# Load the forward-warped image
-image_path = '../image/forward_warped_image.jpg'
-warped_image = Image.open(image_path)
-warped_array = np.array(warped_image)
+# Load the image
+image_path = '../image/teapot.jpg'
+image = Image.open(image_path)
+width, height = image.size
 
-# Define the forward affine transformation matrix
+# Convert the image to a numpy array for pixel manipulation
+source_array = np.array(image)
+destination_array = np.zeros_like(source_array)  # Create an empty array with the same shape as the source
+
+# Define an affine transformation matrix for forward warping (e.g., scaling and translation)
 affine_matrix = np.array([
-    [1.2, 0.2, 30],
-    [0.1, 1.0, 20]
+    [1.2, 0.2, 30],  # Scaling x by 1.2, slight shear in y, and translation in x
+    [0.1, 1.0, 20],  # Slight shear in x, scaling y by 1.0, and translation in y
 ])
 
-# Convert the 2x3 affine matrix to a 3x3 matrix for inversion
-affine_matrix_3x3 = np.vstack([affine_matrix, [0, 0, 1]])
-inverse_affine_matrix_3x3 = np.linalg.inv(affine_matrix_3x3)
+# Forward warp function
+def forward_warp(source, destination, matrix):
+    src_height, src_width = source.shape[:2]
+    
+    for y in range(src_height):
+        for x in range(src_width):
+            # Apply the affine transformation to (x, y)
+            new_pos = np.dot(matrix, [x, y, 1])
+            new_x, new_y = int(new_pos[0]), int(new_pos[1])
 
-# Extract the top 2 rows to use as the 2x3 inverse matrix
-inverse_affine_matrix = inverse_affine_matrix_3x3[:2, :]
+            # Check if the new position is within the bounds of the destination image
+            if 0 <= new_x < destination.shape[1] and 0 <= new_y < destination.shape[0]:
+                destination[new_y, new_x] = source[y, x]  # Map pixel value
 
-# Create an empty array for the destination image (original size)
-destination_array = np.zeros_like(warped_array)
-
-# Inverse warp function with interpolation
-def inverse_warp(warped, destination, inverse_matrix):
-    dst_height, dst_width, num_channels = destination.shape
-
-    for y in range(dst_height):
-        for x in range(dst_width):
-            # Calculate the corresponding source coordinates in the warped image
-            src_pos = np.dot(inverse_matrix, [x, y, 1])
-            src_x, src_y = src_pos[0], src_pos[1]
-
-            # Check if the source position is within the bounds of the warped image
-            if 0 <= src_x < warped.shape[1] and 0 <= src_y < warped.shape[0]:
-                # Use bilinear interpolation to get pixel values for each color channel
-                for c in range(num_channels):
-                    destination[y, x, c] = map_coordinates(
-                        warped[:, :, c], [[src_y], [src_x]], order=1, mode='reflect'
-                    )[0]
-
-# Apply inverse warping to approximate the original image
-inverse_warp(warped_array, destination_array, inverse_affine_matrix)
+# Apply forward warping
+forward_warp(source_array, destination_array, affine_matrix)
 
 # Convert back to an image and save
-inverse_image = Image.fromarray(destination_array)
-inverse_image.save('../image/inverse_warped_image.jpg')
+destination_image = Image.fromarray(destination_array)
+destination_image.save('../image/forward_warped_image.jpg')
 
-print("Inverse warped image saved as 'inverse_warped_image.jpg'")
+print("Forward warped image saved as 'forward_warped_image.jpg'")
